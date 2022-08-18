@@ -1,20 +1,33 @@
 from copy import deepcopy
 from random import randint, randrange, sample, random
 
+import unicurses
+
 from params import *
 from geom import *
 
+
 class Cell(object):
     NEXT_CELL_CHAR = 33
+    NEXT_CELL_COLOR = 0
     
-    def __init__(self, location:tuple, initial_energy:int=1, ruleset:dict=None) -> None:
+    def __init__(self, location:tuple, initial_energy:int=1, ruleset:dict=None, representation=None, color=None) -> None:
         self.location = location
         self.energy_level = initial_energy
         self.ruleset = ruleset
-        self.representation = chr(Cell.NEXT_CELL_CHAR)
+        
+        if representation:
+            if random() < REPRESENTATION_CHANGE_PROBABILITY:
+                self.representation = Cell.get_new_cell_repr()
+            else:
+                self.representation = representation
+        else:
+            self.representation = Cell.get_new_cell_repr()
 
-        Cell.NEXT_CELL_CHAR = Cell.NEXT_CELL_CHAR + 1
-        if Cell.NEXT_CELL_CHAR > 254: Cell.NEXT_CELL_CHAR = 33
+        if color:
+            self.color = color
+        else:
+            self.color = Cell.get_new_color()
 
         if self.ruleset:
             self.mutate()
@@ -29,8 +42,8 @@ class Cell(object):
             results = []
         elif self.energy_level >= threshold:
             child_energy_level = self.energy_level//2
-            child_a = Cell(dest_a, child_energy_level, deepcopy(self.ruleset))
-            child_b = Cell(dest_b, child_energy_level, deepcopy(self.ruleset))
+            child_a = Cell(dest_a, child_energy_level, deepcopy(self.ruleset), self.representation, self.color)
+            child_b = Cell(dest_b, child_energy_level, deepcopy(self.ruleset), self.representation, self.color)
             results = [(child_a, dest_a), (child_b, dest_b)]
         else:
             self.energy_level += 1
@@ -83,3 +96,16 @@ class Cell(object):
 
     def __str__(self) -> str:
         return self.representation
+
+    def get_new_cell_repr():
+        new_repr = chr(Cell.NEXT_CELL_CHAR)
+        Cell.NEXT_CELL_CHAR += + 1
+        if Cell.NEXT_CELL_CHAR > 254: Cell.NEXT_CELL_CHAR = 33
+        return new_repr
+    
+    def get_new_color():
+        new_color = Cell.NEXT_CELL_COLOR
+        Cell.NEXT_CELL_COLOR += 1
+        Cell.NEXT_CELL_COLOR = Cell.NEXT_CELL_COLOR % NUMBER_OF_COLOR_COMBOS
+        return new_color
+        

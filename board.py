@@ -1,15 +1,18 @@
 from collections import defaultdict
 from random import random
 
+import unicurses
+
 from cell import Cell
 from geom import *
 from params import *
 
 
 class Board(object):
-    def __init__(self, rows:int, cols:int) -> None:
+    def __init__(self, rows:int, cols:int, stdscr) -> None:
         self.rows = rows
         self.cols = cols
+        self.stdscr = stdscr
         self.occupied_locations = {}  # maps pairs of (r, c) coordinates onto `Cell`s
         self.next_occupied_locations = defaultdict(list)  # maps pairs of (r, c) coordinates onto lists of `Cell`s
 
@@ -19,11 +22,13 @@ class Board(object):
                 if random() < INITIAL_SPAWN_DENSITY:
                     self.occupied_locations[(r,c)] = Cell((r, c))
         
-    def tick(self):
+    def tick(self) -> str:
         self._decision_phase()
         self.occupied_locations.clear()
         self._resolution_phase()
-        print(str(self))
+        self._draw_phase()
+        
+        # print(str(self))
 
     def _decision_phase(self):
         """
@@ -44,6 +49,8 @@ class Board(object):
     
     def _resolution_phase(self):
         for (r, c), cells in self.next_occupied_locations.items():
+            if not ((0 <= r < self.rows) or (0 <= c < self.cols)):
+                continue
             while len(cells) > 1:
                 cell_a = cells.pop()
                 cell_b = cells.pop()
@@ -56,6 +63,16 @@ class Board(object):
                 cells.append(victor)
             if cells[0].energy_level > 0:
                 self.occupied_locations[(r, c)] = cells[0]
+        self.next_occupied_locations.clear()
+
+    def _draw_phase(self):
+        unicurses.clear()
+        unicurses.refresh()
+        for (r, c), cell in self.occupied_locations.items():
+            unicurses.mvinsstr(r+1, c+1, str(cell), unicurses.color_pair(cell.color))
+        unicurses.border()
+        unicurses.move(0,0)
+        unicurses.refresh()
 
     def __str__(self) -> str:
         ret_str = ""
