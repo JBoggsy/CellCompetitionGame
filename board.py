@@ -1,11 +1,13 @@
 from collections import defaultdict
 from random import random
+from multiprocessing import Pool
 
 import unicurses
 
 from cell import Cell
 from geom import *
 from params import *
+from performance import timer_decorator
 
 
 class Board(object):
@@ -27,26 +29,36 @@ class Board(object):
         self.occupied_locations.clear()
         self._resolution_phase()
         self._draw_phase()
-        
         # print(str(self))
-
+        
+    @timer_decorator
     def _decision_phase(self):
         """
         invariant: any given (r, c) location contains at most one cell at the beginning of a tick
         """
+        cell_nbor_pairs = []
         for (r, c), cell in self.occupied_locations.items():
-            neighbor_config = 0
-            for nbor in range(8):
-                nbor_coords = tuple([sum(coords) for coords in zip((r, c), NBOR_ID_TO_COORD_DELTA[nbor])])
-                if nbor_coords in self.occupied_locations.keys():
-                    neighbor_config += 2**nbor
-            decision_results = cell.decide(neighbor_config)
-            for result_cell, result_dest in decision_results:
-                if len(decision_results) == 1:
-                    self.next_occupied_locations[result_dest].insert(0, result_cell)
-                else:
-                    self.next_occupied_locations[result_dest].append(result_cell)
+            neighbor_config = self.__compute_cell_neighbors(r, c)
+            cell_nbor_pairs.append((cell, neighbor_config))
+        with Pool(8) as p:
+            decision_results = p.starmap(Cell.decide_cell, cell_nbor_pairs)
+            for decision in decision_results:
+                for result_cell, result_dest in decision:
+                    if len(decision) == 1:
+                        self.next_occupied_locations[result_dest].insert(0, result_cell)
+                    else:
+                        self.next_occupied_locations[result_dest].append(result_cell)
+
+    # @timer_decorator
+    def __compute_cell_neighbors(self, r, c) -> int:
+        neighbor_config = 0
+        for nbor in range(8):
+            nbor_coords = tuple([sum(coords) for coords in zip((r, c), NBOR_ID_TO_COORD_DELTA[nbor])])
+            if nbor_coords in self.occupied_locations.keys():
+                neighbor_config += 2**nbor
+        return neighbor_config
     
+    @timer_decorator
     def _resolution_phase(self):
         for (r, c), cells in self.next_occupied_locations.items():
             if not ((0 <= r < self.rows) or (0 <= c < self.cols)):
@@ -65,6 +77,7 @@ class Board(object):
                 self.occupied_locations[(r, c)] = cells[0]
         self.next_occupied_locations.clear()
 
+    @timer_decorator
     def _draw_phase(self):
         unicurses.clear()
         unicurses.refresh()

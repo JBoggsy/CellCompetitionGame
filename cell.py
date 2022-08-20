@@ -5,6 +5,7 @@ import unicurses
 
 from params import *
 from geom import *
+from performance import timer_decorator
 
 
 class Cell(object):
@@ -34,6 +35,7 @@ class Cell(object):
         else:
             self.gen_ruleset()
 
+    @timer_decorator
     def decide(self, neighbors:int) -> list:
         threshold, (dest_a, dest_b) = self.ruleset[neighbors]
         dest_a = tuple([sum(coords) for coords in zip(self.location, NBOR_ID_TO_COORD_DELTA[dest_a])])
@@ -109,3 +111,5 @@ class Cell(object):
         Cell.NEXT_CELL_COLOR = Cell.NEXT_CELL_COLOR % NUMBER_OF_COLOR_COMBOS
         return new_color
         
+    def decide_cell(cell, neighbor_config):
+        return cell.decide(neighbor_config)

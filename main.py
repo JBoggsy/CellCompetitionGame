@@ -1,8 +1,10 @@
+from statistics import mean
 from time import sleep, time
 
 from cell import Cell
 from board import Board
 from params import *
+import performance
 
 import unicurses
 
@@ -24,13 +26,23 @@ if __name__ == "__main__":
     tick_num = 0
     last_tick_time = time()
     unicurses.nodelay(stdscr, True)
-    while True:
-        b.tick()
+    try:
+        while True:
+            b.tick()
 
-        tick_num += 1
-        tick_time = time() - last_tick_time
-        last_tick_time = time()
-        unicurses.mvinsstr(0, 0, f"Tick: {tick_num}  Secs/tick: {tick_time}")
-        
-        key = unicurses.getch()
-        if key == 27: break
+            tick_num += 1
+            tick_time = time() - last_tick_time
+            last_tick_time = time()
+            unicurses.mvinsstr(0, 0, f"Tick: {tick_num}  Secs/tick: {tick_time}")
+            
+            key = unicurses.getch()
+            if key == 27: break
+    except KeyboardInterrupt as e:
+        unicurses.echo()
+        for f_name, timings in performance.function_timings.items():
+            print(f"{f_name}: {sum(timings)}")
+        raise e
+
+    unicurses.echo()
+    for f_name, timings in performance.function_timings.items():
+        print(f"{f_name}: {sum(timings)}")
