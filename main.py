@@ -44,9 +44,15 @@ if __name__ == "__main__":
             tick_num += 1
             tick_time = time() - last_tick_time
             last_tick_time = time()
-            crs.mvinsstr(0, 0, f"Tick: {tick_num}  Secs/tick: {tick_time}")
+            if sys.platform == "win32":
+                crs.mvinsstr(0, 0, f"Tick: {tick_num}  Secs/tick: {tick_time}")
+                key = crs.getch()
+            elif sys.platform == "linux":
+                stdscr.insstr(0, 0, f"Tick: {tick_num}  Secs/tick: {tick_time}")
+                key = stdscr.getch()
+            else:
+                key = 27
             
-            key = crs.getch()
             if key == 27: break
     except KeyboardInterrupt as e:
         crs.echo()
