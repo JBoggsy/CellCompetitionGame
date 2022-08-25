@@ -33,7 +33,10 @@ if __name__ == "__main__":
 
     tick_num = 0
     last_tick_time = time()
-    crs.nodelay(stdscr, True)
+    if sys.platform == "win32":
+        crs.nodelay(stdscr, True)
+    elif sys.platform == "linux":
+        stdscr.nodelay(True)
     try:
         while True:
             b.tick()
