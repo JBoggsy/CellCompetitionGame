@@ -1,4 +1,5 @@
 from collections import defaultdict
+from itertools import starmap
 from random import random
 from multiprocessing import Pool
 
@@ -40,6 +41,20 @@ class Board(object):
         for (r, c), cell in self.occupied_locations.items():
             neighbor_config = self.__compute_cell_neighbors(r, c)
             cell_nbor_pairs.append((cell, neighbor_config))
+        self.__parallel_cell_decisions(cell_nbor_pairs)
+
+    @timer_decorator
+    def __serial_cell_decisions(self, cell_nbor_pairs):
+        decision_results = starmap(Cell.decide_cell, cell_nbor_pairs)
+        for decision in decision_results:
+            for result_cell, result_dest in decision:
+                if len(decision) == 1:
+                    self.next_occupied_locations[result_dest].insert(0, result_cell)
+                else:
+                    self.next_occupied_locations[result_dest].append(result_cell)
+
+    @timer_decorator
+    def __parallel_cell_decisions(self, cell_nbor_pairs):
         with Pool(8) as p:
             decision_results = p.starmap(Cell.decide_cell, cell_nbor_pairs)
             for decision in decision_results:

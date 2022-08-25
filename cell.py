@@ -12,7 +12,7 @@ class Cell(object):
     NEXT_CELL_CHAR = 33
     NEXT_CELL_COLOR = 0
     
-    def __init__(self, location:tuple, initial_energy:int=1, ruleset:dict=None, representation=None, color=None) -> None:
+    def __init__(self, location:tuple, initial_energy:int=1, ruleset:list=None, representation=None, color=None) -> None:
         self.location = location
         self.energy_level = initial_energy
         self.ruleset = ruleset
@@ -43,24 +43,30 @@ class Cell(object):
         if self.energy_level <= 0:
             results = []
         elif self.energy_level >= threshold:
-            child_energy_level = self.energy_level//2
-            child_a = Cell(dest_a, child_energy_level, deepcopy(self.ruleset), self.representation, self.color)
-            child_b = Cell(dest_b, child_energy_level, deepcopy(self.ruleset), self.representation, self.color)
+            child_a = self.create_child(dest_a)
+            child_b = self.create_child(dest_b)
             results = [(child_a, dest_a), (child_b, dest_b)]
         else:
             self.energy_level += 1
             results = [(self, self.location),]
         return results
 
+    @timer_decorator
+    def create_child(self, dest):
+        child = Cell(dest, self.energy_level//2, deepcopy(self.ruleset), self.representation, self.color)
+        return child
+
+
     def gen_ruleset(self):
-        self.ruleset = dict()
+        self.ruleset = list()
         for neighbor_config in range(256):
             threshold = randrange(2, MAX_INITIAL_DIVISION_THRESHOLD)
             destination_a, destination_b = sample(range(8), k=2)
-            self.ruleset[neighbor_config] = [threshold, [destination_a, destination_b]]
+            self.ruleset.append([threshold, [destination_a, destination_b]])
 
+    @timer_decorator
     def mutate(self):
-        for neighbor_config in self.ruleset:
+        for neighbor_config in range(len(self.ruleset)):
             if random() < MUTATION_PROABILITY:
                 self._mutate_rule(neighbor_config)
 
