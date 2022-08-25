@@ -97,13 +97,23 @@ class Board(object):
 
     @timer_decorator
     def _draw_phase(self):
-        crs.clear()
-        crs.refresh()
-        for (r, c), cell in self.occupied_locations.items():
-            crs.mvinsstr(r+1, c+1, str(cell), crs.color_pair(cell.color))
-        crs.border()
-        crs.move(0,0)
-        crs.refresh()
+        if sys.platform == "win32":
+            crs.clear()
+            crs.refresh()
+            for (r, c), cell in self.occupied_locations.items():
+                crs.mvinsstr(r+1, c+1, str(cell), crs.color_pair(cell.color))
+            crs.border()
+            crs.move(0,0)
+            crs.refresh()
+        elif sys.platform == "linux":
+            self.stdscr.clear()
+            self.stdscr.refresh()
+            for (r, c), cell in self.occupied_locations.items():
+                self.stdscr.insstr(r+1, c+1, str(cell), crs.color_pair(cell.color))
+            self.stdscr.border()
+            self.stdscr.move(0,0)
+            self.stdscr.refresh()
+
 
     def __str__(self) -> str:
         ret_str = ""
