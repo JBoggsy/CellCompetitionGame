@@ -2,8 +2,11 @@ from collections import defaultdict
 from itertools import starmap
 from random import random
 from multiprocessing import Pool
-
-import unicurses
+import sys
+if sys.platform == "win32":
+    import unicurses as crs
+elif sys.platform == "linux":
+    import curses as crs
 
 from cell import Cell
 from geom import *
@@ -41,7 +44,7 @@ class Board(object):
         for (r, c), cell in self.occupied_locations.items():
             neighbor_config = self.__compute_cell_neighbors(r, c)
             cell_nbor_pairs.append((cell, neighbor_config))
-        self.__parallel_cell_decisions(cell_nbor_pairs)
+        self.__serial_cell_decisions(cell_nbor_pairs)
 
     @timer_decorator
     def __serial_cell_decisions(self, cell_nbor_pairs):
@@ -94,13 +97,13 @@ class Board(object):
 
     @timer_decorator
     def _draw_phase(self):
-        unicurses.clear()
-        unicurses.refresh()
+        crs.clear()
+        crs.refresh()
         for (r, c), cell in self.occupied_locations.items():
-            unicurses.mvinsstr(r+1, c+1, str(cell), unicurses.color_pair(cell.color))
-        unicurses.border()
-        unicurses.move(0,0)
-        unicurses.refresh()
+            crs.mvinsstr(r+1, c+1, str(cell), crs.color_pair(cell.color))
+        crs.border()
+        crs.move(0,0)
+        crs.refresh()
 
     def __str__(self) -> str:
         ret_str = ""

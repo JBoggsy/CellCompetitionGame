@@ -1,8 +1,6 @@
 from copy import deepcopy
 from random import randint, randrange, sample, random
 
-import unicurses
-
 from params import *
 from geom import *
 from performance import timer_decorator
@@ -55,7 +53,6 @@ class Cell(object):
     def create_child(self, dest):
         child = Cell(dest, self.energy_level//2, deepcopy(self.ruleset), self.representation, self.color)
         return child
-
 
     def gen_ruleset(self):
         self.ruleset = list()

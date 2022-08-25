@@ -1,19 +1,22 @@
 from itertools import permutations
-import unicurses
-
+import sys
+if sys.platform == "win32":
+    import unicurses as crs
+elif sys.platform == "linux":
+    import curses as crs
 
 ALL_COLOR_COMBINATIONS = list(permutations(
     [
-        unicurses.COLOR_BLACK,
-        unicurses.COLOR_WHITE,
-        unicurses.COLOR_RED,
-        unicurses.COLOR_GREEN,
-        unicurses.COLOR_BLUE,
-        unicurses.COLOR_CYAN,
-        unicurses.COLOR_YELLOW,
-        unicurses.COLOR_MAGENTA
+        crs.COLOR_BLACK,
+        crs.COLOR_WHITE,
+        crs.COLOR_RED,
+        crs.COLOR_GREEN,
+        crs.COLOR_BLUE,
+        crs.COLOR_CYAN,
+        crs.COLOR_YELLOW,
+        crs.COLOR_MAGENTA
     ], 2))
-ALL_COLOR_COMBINATIONS.remove((unicurses.COLOR_WHITE, unicurses.COLOR_BLACK))
+ALL_COLOR_COMBINATIONS.remove((crs.COLOR_WHITE, crs.COLOR_BLACK))
 NUMBER_OF_COLOR_COMBOS = len(ALL_COLOR_COMBINATIONS)
 
 MAX_INITIAL_DIVISION_THRESHOLD = 5
