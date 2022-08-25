@@ -23,7 +23,12 @@ if __name__ == "__main__":
     
     for i, color_combo in enumerate(ALL_COLOR_COMBINATIONS,start=1):
         crs.init_pair(i, color_combo[0], color_combo[1])
-    rows, cols = crs.getmaxyx(stdscr)
+
+    if sys.platform == "win32":
+        rows, cols = crs.getmaxyx(stdscr)
+    elif sys.platform == "linux":
+        rows = crs.LINES
+        cols = crs.COLS
     b = Board(rows-2, cols-2, stdscr)
 
     tick_num = 0
@@ -42,10 +47,12 @@ if __name__ == "__main__":
             if key == 27: break
     except KeyboardInterrupt as e:
         crs.echo()
+        crs.endwin()
         for f_name, timings in performance.function_timings.items():
             print(f"{f_name}: {sum(timings)}")
         raise e
 
     crs.echo()
+    crs.endwin()
     for f_name, timings in performance.function_timings.items():
         print(f"{f_name}: {sum(timings)}")
