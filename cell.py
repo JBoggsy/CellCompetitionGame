@@ -33,7 +33,7 @@ class Cell(object):
         else:
             self.gen_ruleset()
 
-    @timer_decorator
+    #@timer_decorator
     def decide(self, neighbors:int) -> list:
         threshold, (dest_a, dest_b) = self.ruleset[neighbors]
         dest_a = tuple([sum(coords) for coords in zip(self.location, NBOR_ID_TO_COORD_DELTA[dest_a])])
@@ -49,7 +49,7 @@ class Cell(object):
             results = [(self, self.location),]
         return results
 
-    @timer_decorator
+    #@timer_decorator
     def create_child(self, dest):
         child = Cell(dest, self.energy_level//2, deepcopy(self.ruleset), self.representation, self.color)
         return child
@@ -61,7 +61,7 @@ class Cell(object):
             destination_a, destination_b = sample(range(8), k=2)
             self.ruleset.append([threshold, [destination_a, destination_b]])
 
-    @timer_decorator
+    #@timer_decorator
     def mutate(self):
         for neighbor_config in range(len(self.ruleset)):
             if random() < MUTATION_PROABILITY:
@@ -101,6 +101,9 @@ class Cell(object):
 
     def __str__(self) -> str:
         return self.representation
+
+    def __repr__(self) -> str:
+        return f"{self.location},{self.representation},{self.color}"
 
     def get_new_cell_repr():
         new_repr = chr(Cell.NEXT_CELL_CHAR)

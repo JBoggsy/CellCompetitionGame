@@ -2,11 +2,13 @@ from collections import defaultdict
 from itertools import starmap
 from random import random
 from multiprocessing import Pool
+import time
 import sys
 if sys.platform == "win32":
     import unicurses as crs
 elif sys.platform == "linux":
     import curses as crs
+    import _curses
 
 from cell import Cell
 from geom import *
@@ -35,18 +37,22 @@ class Board(object):
         self._draw_phase()
         # print(str(self))
         
-    @timer_decorator
+    #@timer_decorator
     def _decision_phase(self):
         """
         invariant: any given (r, c) location contains at most one cell at the beginning of a tick
         """
         cell_nbor_pairs = []
         for (r, c), cell in self.occupied_locations.items():
+            if r < 0 or r >= self.rows:
+                continue
+            if c < 0 or c >= self.cols:
+                continue
             neighbor_config = self.__compute_cell_neighbors(r, c)
             cell_nbor_pairs.append((cell, neighbor_config))
         self.__serial_cell_decisions(cell_nbor_pairs)
 
-    @timer_decorator
+    #@timer_decorator
     def __serial_cell_decisions(self, cell_nbor_pairs):
         decision_results = starmap(Cell.decide_cell, cell_nbor_pairs)
         for decision in decision_results:
@@ -56,7 +62,7 @@ class Board(object):
                 else:
                     self.next_occupied_locations[result_dest].append(result_cell)
 
-    @timer_decorator
+    #@timer_decorator
     def __parallel_cell_decisions(self, cell_nbor_pairs):
         with Pool(8) as p:
             decision_results = p.starmap(Cell.decide_cell, cell_nbor_pairs)
@@ -76,7 +82,7 @@ class Board(object):
                 neighbor_config += 2**nbor
         return neighbor_config
     
-    @timer_decorator
+    #@timer_decorator
     def _resolution_phase(self):
         for (r, c), cells in self.next_occupied_locations.items():
             if not ((0 <= r < self.rows) or (0 <= c < self.cols)):
@@ -95,7 +101,7 @@ class Board(object):
                 self.occupied_locations[(r, c)] = cells[0]
         self.next_occupied_locations.clear()
 
-    @timer_decorator
+    #@timer_decorator
     def _draw_phase(self):
         if sys.platform == "win32":
             crs.clear()
@@ -109,10 +115,16 @@ class Board(object):
             self.stdscr.clear()
             self.stdscr.refresh()
             for (r, c), cell in self.occupied_locations.items():
-                self.stdscr.insstr(r+1, c+1, str(cell), crs.color_pair(cell.color))
+                try:
+                    self.stdscr.insstr(min(max(0,r),self.rows), min(max(0,c),self.cols), str(cell), crs.color_pair(cell.color))
+                except _curses.error as e:
+                    print(r,c,cell, crs.color_pair(cell.color))
+                    raise e
             self.stdscr.border()
             self.stdscr.move(0,0)
             self.stdscr.refresh()
+        with open(f"log-{time.time()}.txt", "a") as outfile:
+            outfile.write(repr(self))
 
 
     def __str__(self) -> str:
@@ -126,5 +138,12 @@ class Board(object):
                     row_str += " "
             row_str += "\n"
             ret_str += row_str
+        return ret_str
+
+    def __repr__(self) -> str:
+        ret_str = f"{{'rows': {self.rows},'cols': {self.cols},"
+        for loc, cell in self.occupied_locations.items():
+            ret_str += f"'{loc}': {repr(cell)},"
+        ret_str += "}"
         return ret_str
 
