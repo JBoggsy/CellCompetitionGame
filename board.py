@@ -44,10 +44,6 @@ class Board(object):
         """
         cell_nbor_pairs = []
         for (r, c), cell in self.occupied_locations.items():
-            if r < 0 or r >= self.rows:
-                continue
-            if c < 0 or c >= self.cols:
-                continue
             neighbor_config = self.__compute_cell_neighbors(r, c)
             cell_nbor_pairs.append((cell, neighbor_config))
         self.__serial_cell_decisions(cell_nbor_pairs)
@@ -75,18 +71,23 @@ class Board(object):
 
     # @timer_decorator
     def __compute_cell_neighbors(self, r, c) -> int:
-        neighbor_config = 0
+        neighbor_config = []
         for nbor in range(8):
-            nbor_coords = tuple([sum(coords) for coords in zip((r, c), NBOR_ID_TO_COORD_DELTA[nbor])])
+            nbor_coords =[sum(coords) for coords in zip((r, c), NBOR_ID_TO_COORD_DELTA[nbor])]
+            nbor_coords[0] %= self.rows
+            nbor_coords[1] %= self.rows
+            nbor_coords =tuple(nbor_coords)
             if nbor_coords in self.occupied_locations.keys():
-                neighbor_config += 2**nbor
+                neighbor_config.append(1)
+            else:
+                neighbor_config.append(0)
         return neighbor_config
     
     #@timer_decorator
     def _resolution_phase(self):
         for (r, c), cells in self.next_occupied_locations.items():
-            if not ((0 <= r < self.rows) or (0 <= c < self.cols)):
-                continue
+            r = r % self.rows
+            c = c % self.cols
             while len(cells) > 1:
                 cell_a = cells.pop()
                 cell_b = cells.pop()
@@ -105,7 +106,6 @@ class Board(object):
     def _draw_phase(self):
         if sys.platform == "win32":
             crs.clear()
-            crs.refresh()
             for (r, c), cell in self.occupied_locations.items():
                 crs.mvinsstr(r+1, c+1, str(cell), crs.color_pair(cell.color))
             crs.border()
@@ -123,8 +123,8 @@ class Board(object):
             self.stdscr.border()
             self.stdscr.move(0,0)
             self.stdscr.refresh()
-        with open(f"log-{time.time()}.txt", "a") as outfile:
-            outfile.write(repr(self))
+        # with open(f"log-{time.time()}.txt", "a") as outfile:
+        #     outfile.write(repr(self))
 
 
     def __str__(self) -> str:

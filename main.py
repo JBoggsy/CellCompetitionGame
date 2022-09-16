@@ -46,9 +46,10 @@ if __name__ == "__main__":
             last_tick_time = time()
             if sys.platform == "win32":
                 crs.mvinsstr(0, 0, f"Tick: {tick_num}  Secs/tick: {tick_time}")
+                key = crs.getch()
             elif sys.platform == "linux":
                 stdscr.insstr(0, 0, f"Tick: {tick_num}  Secs/tick: {tick_time}")
-                key = crs.getch()
+                key = stdscr.getch()
             else:
                 key = 27
 

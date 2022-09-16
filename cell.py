@@ -1,8 +1,11 @@
 from copy import deepcopy
 from random import randint, randrange, sample, random
 
+import numpy as np
+
 from params import *
 from geom import *
+from ruleset import Ruleset
 from performance import timer_decorator
 
 
@@ -10,10 +13,10 @@ class Cell(object):
     NEXT_CELL_CHAR = 33
     NEXT_CELL_COLOR = 0
     
-    def __init__(self, location:tuple, initial_energy:int=1, ruleset:list=None, representation=None, color=None) -> None:
+    def __init__(self, location:tuple, initial_energy:int=1, ruleset:Ruleset=None, representation=None, color=None) -> None:
         self.location = location
         self.energy_level = initial_energy
-        self.ruleset = ruleset
+        self.ruleset = Ruleset(ruleset)
         
         if representation:
             if random() < REPRESENTATION_CHANGE_PROBABILITY:
@@ -28,14 +31,9 @@ class Cell(object):
         else:
             self.color = Cell.get_new_color()
 
-        if self.ruleset:
-            self.mutate()
-        else:
-            self.gen_ruleset()
-
-    #@timer_decorator
-    def decide(self, neighbors:int) -> list:
-        threshold, (dest_a, dest_b) = self.ruleset[neighbors]
+    # @timer_decorator
+    def decide(self, neighbors:list) -> list:
+        threshold, (dest_a, dest_b) = self.ruleset(neighbors)
         dest_a = tuple([sum(coords) for coords in zip(self.location, NBOR_ID_TO_COORD_DELTA[dest_a])])
         dest_b = tuple([sum(coords) for coords in zip(self.location, NBOR_ID_TO_COORD_DELTA[dest_b])])
         if self.energy_level <= 0:
@@ -49,39 +47,10 @@ class Cell(object):
             results = [(self, self.location),]
         return results
 
-    #@timer_decorator
+    # @timer_decorator
     def create_child(self, dest):
-        child = Cell(dest, self.energy_level//2, deepcopy(self.ruleset), self.representation, self.color)
+        child = Cell(dest, self.energy_level//2, self.ruleset, self.representation, self.color)
         return child
-
-    def gen_ruleset(self):
-        self.ruleset = list()
-        for neighbor_config in range(256):
-            threshold = randrange(2, MAX_INITIAL_DIVISION_THRESHOLD)
-            destination_a, destination_b = sample(range(8), k=2)
-            self.ruleset.append([threshold, [destination_a, destination_b]])
-
-    #@timer_decorator
-    def mutate(self):
-        for neighbor_config in range(len(self.ruleset)):
-            if random() < MUTATION_PROABILITY:
-                self._mutate_rule(neighbor_config)
-
-    def _mutate_rule(self, neighbor_config):
-        mutate_threshold = random() < 0.5
-        if mutate_threshold:
-            increment = random() < 0.5
-            if increment:
-                self.ruleset[neighbor_config][0] += 1
-            else:
-                self.ruleset[neighbor_config][0] -= 1
-        else:
-            dest_idx = randrange(0, 2)
-            clockwise = random() < 0.5
-            if clockwise:
-                self.ruleset[neighbor_config][1][dest_idx] = (self.ruleset[neighbor_config][1][dest_idx] + 1) % 8
-            else:
-                self.ruleset[neighbor_config][1][dest_idx] = (self.ruleset[neighbor_config][1][dest_idx] - 1) % 8
 
     def __gt__(self, other) -> bool:
         assert type(other) is Cell
@@ -101,9 +70,6 @@ class Cell(object):
 
     def __str__(self) -> str:
         return self.representation
-
-    def __repr__(self) -> str:
-        return f"{self.location},{self.representation},{self.color}"
 
     def get_new_cell_repr():
         new_repr = chr(Cell.NEXT_CELL_CHAR)
